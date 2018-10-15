@@ -9,13 +9,16 @@ library(splines)
 
 ####SET INPUT PARAMETERS#############################################################################################################
 countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec', 'PAHO_gy', 'PAHO_pr') #PAHO_mx, PAHO_hr
-age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 23-59m
-hdi_level <- 'Low HDI' # Low HDI, Med HDI, Hi  HDI, A
+#countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
+
+age_group <- '24-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
+hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=c(0,0,0,0,0,0,0)
 max.time.points=48+1 
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results/")
+output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
+ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
@@ -163,7 +166,11 @@ country2<-pred.labs.extract2[,1]
 state2<-pred.labs.extract2[,2]
 country.labs2<-c('AR', 'BR','CO' ,'EC', 'DR', 'GY', 'NC', 'PR') #MX, HR
 cols.plot<- c('#e41a1c','#377eb8','#4daf4a','#984ea3', '#ff7f00','#a65628','#f781bf', 'grey')
-par(mfrow=c(10,10) , mar=c(0.5,1,0.6,0))
+dim1<- max(1,floor(sqrt(length(countries))))
+dim2<- max(1,ceiling(sqrt(length(countries))))
+if(dim1+dim2<length(countries)){dim1=dim1+ 1}
+tiff(paste0(output_directory,'small multiples nobias.tiff'), width = 7, height = 4, units = "in",res=200)
+par(mfrow=c(dim1,dim2) , mar=c(2,2,0.6,0))
 for (i in 1:dim(preds.nobias.q.alt )[3]){
   y.all<- t(exp(preds.nobias.q.alt[,,i]))
   keep.obs<-as.data.frame(complete.cases(y.all))[,1]
@@ -174,13 +181,15 @@ for (i in 1:dim(preds.nobias.q.alt )[3]){
   matplot(t(exp(preds.nobias.q.alt[,,i])), bty='l', type='l', col='white', lty=c(2,1,2), xlim=c(0,48), ylim=c(0.5,2), axes=F)
   polygon(xx, yy, col='gray90', border=NA)
   points( y.all[,2], col=cols.plot[country2[i]], type='l')
-  abline(h=1, lty=3, col='gray', lwd=0.5)
+  abline(h=1, lty=2, col='black', lwd=1)
+  abline(h=c(0.8,1.2), lty=2, col='gray', lwd=0.5)
   Axis(side=1, labels=FALSE, at=c(0,12,24,36,48), tck=-0.005,  col='gray')
   Axis(side=2, labels=FALSE, at=c(0.5,1,2.0), tck=-0.005, col='gray')
   if(state2[i]==1){
     title(country.labs2[country2[i]], col.main=cols.plot[country2[i]] )
     }
 }
+dev.off()
 
 
 
