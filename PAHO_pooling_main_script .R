@@ -225,7 +225,7 @@ for (i in 1:dim(preds.nobias.q.alt )[3]){
   n.times<- nrow(y.all)
   xx<- c(1:n.times, rev(1:n.times))
   yy<- c(y.all[,1], rev(y.all[,3] ))
-  matplot(t(exp(preds.nobias.q.alt[,,i])), bty='l', type='l', col='white', lty=c(2,1,2), xlim=c(0,60), ylim=c(0.5,2), axes=F)
+  matplot(t(exp(preds.nobias.q.alt[,,i])), bty='l', type='l', col='white', lty=c(2,1,2), xlim=c(0,tot_time), ylim=c(0.5,2), axes=F)
   polygon(xx, yy, col='gray90', border=NA)
   points( y.all[,2], col=cols.plot[country2[i]], type='l')
   abline(h=1, lty=2, col='black', lwd=1)

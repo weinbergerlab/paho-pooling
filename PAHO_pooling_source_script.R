@@ -50,7 +50,7 @@ for (c in 1:N.countries){
   time<-as.Date(as.numeric(dimnames(log_rr_q)[[1]]), origin="1970-01-01" )  
   
   index.post<-which(time>=(eval_period[1] %m-% months(pre.vax.time)) & time<=eval_period[2])  
-  if (length(index.post)>max.time.points){ index.post<-index.post[1:max.time.points] } 
+  if (length(index.post)>tot_time){ index.post<-index.post[1:tot_time] } 
   
   if(subnational[c]==0){  #National-level only
     # limit by age group
@@ -75,9 +75,9 @@ for (c in 1:N.countries){
 }
 
 ##Combine together estimates from each country into a single array
-log_rr_q_all<-array(NA, dim=c(max.time.points,max(N.states),N.countries))
+log_rr_q_all<-array(NA, dim=c(tot_time,max(N.states),N.countries))
 state.labels<-array(NA, dim=dim(log_rr_q_all)[c(2:3)]   )
-log_rr_prec_all<-array(NA, dim=c(max.time.points,max.time.points,max(N.states),N.countries))
+log_rr_prec_all<-array(NA, dim=c(tot_time,tot_time,max(N.states),N.countries))
 ts.length<-rep(NA, times=N.countries)
 for(i in 1:N.countries){
   for(j in 1:N.states[i]){
