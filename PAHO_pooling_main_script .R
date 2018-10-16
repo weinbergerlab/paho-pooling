@@ -18,13 +18,9 @@ max.time.points=48+1
 source('PAHO_pooling_source_script.R')
 output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
-q=1
-p=N.knots+1
-I_Omega<-replicate( N.countries, diag(N.knots + 1) )
-#I_Sigma<-replicate( N.countries, diag(p) )
-I_Sigma<-diag(p) 
-I_Omega<-diag(q)
-m<-1 
+p=N.knots+1 #intercept and slope for each time series
+q=1  #2nd level predictors of intercept and slope q=1 for intercept only
+
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
 ###################################################
@@ -33,7 +29,13 @@ model{
 
   for(i in 1:n.countries){
     for(j in 1:N.states[i]){
+#################
+#Observation model
+#################
       w_hat[1:ts.length[i,j], j,i] ~ dmnorm(w_true[i,j, 1:ts.length[i,j]], log_rr_prec_all[1:ts.length[i,j], 1:ts.length[i,j], j,i])
+#################
+#Model of 'true' time series data
+#################
       w_true[i,j, 1:ts.length[i,j]] ~ dmnorm(reg_mean[i,j, 1:ts.length[i,j]], w_true_cov_inv[i,j, 1:ts.length[i,j], 1:ts.length[i,j]])
       reg_mean[i,j, 1:ts.length[i,j]]<-spl.t.std[1:ts.length[i,j],]%*%beta[i,j, 1:p]
      for(k1 in 1:ts.length[i,j]){
@@ -41,46 +43,44 @@ model{
            w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
         }
       }
-    ##############################################################
-    #Second Stage Statistical Model
-    ##############################################################
-      beta[i,j, 1:p] ~ dmnorm(mu1[i,j, 1:(n.knots + 1)], Sigma_inv[i, 1:p, 1:p])
-      for(k in 1:p){
-       mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
-      }
-
-      w_true_var_inv[i,j]<-1/(w_true_sd[i,j]*w_true_sd[i,j])
-      w_true_sd[i,j] ~ dunif(0, 1000)
-    }
-
-
+##############################################################
+#Second Stage Statistical Model
+##############################################################
+beta[i,j, 1:p] ~ dmnorm(mu1[i,j, 1:p], Sigma_inv[i, 1:p, 1:p])
 for(k in 1:p){
-###############################################################
- #Third Stage Statistical Model
-###############################################################
-   gamma[i,k, 1:q] ~ dmnorm(mu2[i,k, 1:q], Omega_inv[k, 1:q, 1:q])
-   for(l in 1:q){
-   mu2[i,k,l] <- w[i, 1:m]%*%theta[k,l, 1:m]
-   }
-   }
-   Sigma_inv[i, 1:p, 1:p] ~ dwish(I_Sigma[1:p, 1:p], (p + 1))
-   Sigma[i, 1:p, 1:p] <- inverse(Sigma_inv[i, 1:p, 1:p])
-   }
+mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
+}
+}
+for(k in 1:p){
+  
+  ###############################################################
+  #Third Stage Statistical Model
+  ###############################################################
+  gamma[i,k, 1:q] ~ dmnorm(mu2[i,k, 1:q], Omega_inv[k, 1:q, 1:q])
+    for(l in 1:q){
+     mu2[i,k,l] <- w[i, 1:m]%*%theta[k,l, 1:m]
+    }
+  } 
+Sigma_inv[i, 1:p, 1:p] ~ dwish(I_Sigma[1:p, 1:p], (p + 1))
+Sigma[i, 1:p, 1:p] <- inverse(Sigma_inv[i, 1:p, 1:p])
+}
 
 #############################################################
 #Remaining Prior Distributions
 #############################################################
-   sigma2_phi_inv <- 1/(sigma_phi*sigma_phi)
-   sigma_phi ~ dunif(0, 1000)
-   for(k in 1:p){
-   Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
-   Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
-   for(l in 1:q){
-   for(r in 1:m){
-   theta[k,l,r] ~ dnorm(0, 0.0001)
-            }
-          }
-      }
+sigma2_phi_inv <- 1/(sigma_phi*sigma_phi)
+sigma_phi ~ dunif(0, 1000)
+
+for(k in 1:p){
+Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
+Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
+for(l in 1:q){
+  for(r in 1:m){
+    theta[k,l,r] ~ dnorm(0, 0.0001)
+  }
+  }
+}
+
 }
  "
 
@@ -89,7 +89,6 @@ for(k in 1:p){
 model_jags<-jags.model(textConnection(model_string),
                        data=list('n.countries' = N.countries, 
                                  'N.states' = N.states, 
-                                 'n.knots' = N.knots, 
                                  'w_hat' = log_rr_q_all,
                                  'log_rr_prec_all' = log_rr_prec_all,  
                                  'spl.t.std' = spl.t.std, 
@@ -97,7 +96,9 @@ model_jags<-jags.model(textConnection(model_string),
                                  'p'=p,
                                  'q'=q,
                                  'm'=m,
-                                 'I_Omega'= I_Omega), n.chains=2) 
+                                 'w'=w,
+                                 'I_Omega'= I_Omega,
+                                 'I_Sigma'=I_Sigma), n.chains=2) 
 
 #Posterior Sampling
 update(model_jags, n.iter=5000)  

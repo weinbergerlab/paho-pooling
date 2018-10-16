@@ -117,3 +117,15 @@ for(i in 1:N.countries){
 }
 identity<-diag(nrow(spl.t.std))
 ts.length.vec<-as.vector(t(ts.length_mat))[!is.na(as.vector(t(ts.length_mat)))]
+
+#Matrices to input to JAGS
+#I_Sigma<-replicate( N.countries, diag(p) )
+I_Sigma<-diag(p)  #For p=N vcovariates of intercept and slope
+I_Omega<-diag(q)  # q= number of predictors of the p slopes 
+m<-1  #m=number of country-level covariates
+w<-matrix(NA, nrow=N.countries, ncol=m) 
+for(i in 1:N.countries){
+  for(k in 1:m){
+    w[i,k]<-1
+  }
+}
