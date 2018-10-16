@@ -7,7 +7,7 @@ for (c in 1:N.countries){
   country<-countries[c]
   print(country)
   
-
+  
   #####################################################################
   #SET COUNTRY_SPECIFIC PARAMETERS--set eval period as intro date-1 month
   if (grepl("PAHO_ar", country, fixed=TRUE)) {
@@ -63,7 +63,7 @@ for (c in 1:N.countries){
   } else {  
     select.obs<-grep(paste0("^",keep.grp), dimnames(log_rr_q)[[3]])
     exclude.obs2<-which(apply(log_rr_prec,3,function(x)  sum(is.nan(x)))>0)  #Which states have no NaN in covariance matrix
-
+    
     select.obs.state<-setdiff(select.obs,exclude.obs2)      
     log_rr_q <-log_rr_q[index.post,,select.obs.state]
     #log_rr_sd <-log_rr_sd[,index.post,]
@@ -117,4 +117,3 @@ for(i in 1:N.countries){
 }
 identity<-diag(nrow(spl.t.std))
 ts.length.vec<-as.vector(t(ts.length_mat))[!is.na(as.vector(t(ts.length_mat)))]
-
