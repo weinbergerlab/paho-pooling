@@ -16,6 +16,7 @@ hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=rep(0, length(countries))
 max.time.points=48
 pre.vax.time<-12 #how many to use when anchoring at t=0
+tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
 output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
@@ -224,12 +225,12 @@ for (i in 1:dim(preds.nobias.q.alt )[3]){
   n.times<- nrow(y.all)
   xx<- c(1:n.times, rev(1:n.times))
   yy<- c(y.all[,1], rev(y.all[,3] ))
-  matplot(t(exp(preds.nobias.q.alt[,,i])), bty='l', type='l', col='white', lty=c(2,1,2), xlim=c(0,48), ylim=c(0.5,2), axes=F)
+  matplot(t(exp(preds.nobias.q.alt[,,i])), bty='l', type='l', col='white', lty=c(2,1,2), xlim=c(0,60), ylim=c(0.5,2), axes=F)
   polygon(xx, yy, col='gray90', border=NA)
   points( y.all[,2], col=cols.plot[country2[i]], type='l')
   abline(h=1, lty=2, col='black', lwd=1)
   abline(h=c(0.8,1.2), lty=2, col='gray', lwd=0.5)
-  Axis(side=1, labels=FALSE, at=c(0,12,24,36,48), tck=-0.005,  col='gray')
+  Axis(side=1, labels=FALSE, at=c(0,12,24,36,48,60), tck=-0.015,  col='gray')
   Axis(side=2, labels=FALSE, at=c(0.5,1,2.0), tck=-0.005, col='gray')
   if(state2[i]==1){
     title(country.labs2[country2[i]], col.main=cols.plot[country2[i]] )
