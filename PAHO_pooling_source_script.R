@@ -11,31 +11,31 @@ for (c in 1:N.countries){
   #####################################################################
   #SET COUNTRY_SPECIFIC PARAMETERS--set eval period as intro date-1 month
   if (grepl("PAHO_ar", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2012-01-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2012-01-01'), as.Date('2015-12-01'))
     keep.grp=paste0('ar ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_br", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2010-03-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2010-03-01'), as.Date('2015-12-01'))
     keep.grp=paste0('br ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_co", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2011-11-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2011-11-01'), as.Date('2015-12-01'))
     keep.grp=paste0('co ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_dr", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2013-09-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2013-09-01'), as.Date('2015-12-01'))
     keep.grp=paste0('dr ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_ec", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2010-08-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2010-08-01'), as.Date('2015-12-01'))
     keep.grp=paste0('ec ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_gy", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2011-01-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2011-01-01'), as.Date('2013-12-01'))
     keep.grp=paste0('gy ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_hr", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2011-01-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2011-01-01'), as.Date('2015-12-01'))
     keep.grp=paste0('hr ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_mx", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2008-02-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2008-01-01'), as.Date('2015-12-01'))
     keep.grp=paste0('mx ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_nc", country, fixed=TRUE)) {
-    eval_period <- c(as.Date('2012-01-01'), as.Date('2014-12-01'))
+    eval_period <- c(as.Date('2012-01-01'), as.Date('2015-12-01'))
     keep.grp=paste0('nc ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_pr", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2009-08-01'), as.Date('2014-12-01'))
