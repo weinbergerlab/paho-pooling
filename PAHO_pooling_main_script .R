@@ -7,7 +7,7 @@ library(R2jags)
 library(splines) 
 
 ####SET INPUT PARAMETERS#############################################################################################################
-countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec', 'PAHO_gy', 'PAHO_pr') #PAHO_mx, PAHO_hr
+countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr 'PAHO_gy',
 #countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
 
 age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
@@ -16,10 +16,8 @@ subnational=c(0,0,0,0,0,0,0)
 max.time.points=48+1 
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results_MVN/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
-p=N.knots+1 #intercept and slope for each time series
-q=1  #2nd level predictors of intercept and slope q=1 for intercept only
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
@@ -42,13 +40,15 @@ model{
         for(k2 in 1:ts.length[i,j]){
            w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
         }
-      }
+     }
+      w_true_var_inv[i,j]<-1/(w_true_sd[i,j]*w_true_sd[i,j])
+      w_true_sd[i,j] ~ dunif(0, 1000)
 ##############################################################
 #Second Stage Statistical Model
 ##############################################################
 beta[i,j, 1:p] ~ dmnorm(mu1[i,j, 1:p], Sigma_inv[i, 1:p, 1:p])
 for(k in 1:p){
-mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
+  mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
 }
 }
 for(k in 1:p){
@@ -71,20 +71,26 @@ Sigma[i, 1:p, 1:p] <- inverse(Sigma_inv[i, 1:p, 1:p])
 sigma2_phi_inv <- 1/(sigma_phi*sigma_phi)
 sigma_phi ~ dunif(0, 1000)
 
+# for(k in 1:p){
+# Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
+# Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
+# for(l in 1:q){
+#   for(r in 1:m){
+#     theta[k,l,r] ~ dnorm(0, 0.0001)
+#   }
+#   }
+# }
 for(k in 1:p){
-Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
-Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
-for(l in 1:q){
-  for(r in 1:m){
-    theta[k,l,r] ~ dnorm(0, 0.0001)
-  }
-  }
-}
-
+     Omega_inv[k, 1:q, 1:q] <- 1/(Omega[k, 1:q, 1:q]*Omega[k, 1:q, 1:q])
+     Omega[k, 1:q, 1:q] ~ dunif(0, 1000)
+     for(l in 1:q){
+         for(r in 1:m){
+               theta[k,l,r] ~ dnorm(0, 0.0001)
+              }
+          }
+    }
 }
  "
-
-
 #Model Organization
 model_jags<-jags.model(textConnection(model_string),
                        data=list('n.countries' = N.countries, 
@@ -97,6 +103,7 @@ model_jags<-jags.model(textConnection(model_string),
                                  'q'=q,
                                  'm'=m,
                                  'w'=w,
+                                 'z'=z,
                                  'I_Omega'= I_Omega,
                                  'I_Sigma'=I_Sigma), n.chains=2) 
 
