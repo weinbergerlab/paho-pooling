@@ -6,12 +6,15 @@ require(abind)
 library(mgcv)   
 library(R2jags) 
 library(splines) 
+library(lubridate)
 
+#Note Guyana is 
 ####SET INPUT PARAMETERS#############################################################################################################
-countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec', 'PAHO_gy', 'PAHO_pr') #PAHO_mx, PAHO_hr
+#countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec', 'PAHO_gy', 'PAHO_pr') #PAHO_mx, PAHO_hr
 #countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
+countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
 
-age_group <- '24-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
+age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
 hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=c(0,0,0,0,0,0,0)
 max.time.points=48+1 
@@ -19,6 +22,10 @@ max.time.points=48+1
 source('PAHO_pooling_source_script.R')
 output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
+
+par(mfrow=c(1,1))
+matplot(log_rr_q_all[,1,], type='l', bty='l')
+abline(h=0)
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
@@ -164,7 +171,8 @@ pred.labs.extract<- sub(".*\\[(.*)\\].*", "\\1", pred.labs, perl=TRUE)    #extra
 pred.labs.extract2<-matrix(as.numeric(unlist(strsplit(pred.labs.extract, ","))),ncol=3, byrow=TRUE) #format into a matrix
 country2<-pred.labs.extract2[,1] 
 state2<-pred.labs.extract2[,2]
-country.labs2<-c('AR', 'BR','CO' ,'EC', 'DR', 'GY', 'NC', 'PR') #MX, HR
+#country.labs2<-c('AR', 'BR','CO' ,'EC', 'DR', 'GY', 'NC', 'PR') #MX, HR
+country.labs2<-countries
 cols.plot<- c('#e41a1c','#377eb8','#4daf4a','#984ea3', '#ff7f00','#a65628','#f781bf', 'grey')
 dim1<- max(1,floor(sqrt(length(countries))))
 dim2<- max(1,ceiling(sqrt(length(countries))))
