@@ -5,6 +5,7 @@ require(abind)
 library(mgcv)   
 library(R2jags) 
 library(splines) 
+library(lubridate)
 
 ####SET INPUT PARAMETERS#############################################################################################################
 countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr 'PAHO_gy',
@@ -13,11 +14,16 @@ countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr') #
 age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
 hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=c(0,0,0,0,0,0,0)
-max.time.points=48+1 
+max.time.points=48
+pre.vax.time<-12 #how many to use when anchoring at t=0
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results_MVN/",hdi_level,"_",age_group, "_subnat", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
+
+matplot(log_rr_q_all[,1,], type='l', bty='l', col=1:N.countries, ylim=c(-0.5,0.5))
+legend(x=30, y=-1, countries, col=1:N.countries, lty=2)
+abline(h=0, v=pre.vax.time)
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####

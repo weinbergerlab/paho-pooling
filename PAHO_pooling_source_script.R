@@ -49,7 +49,7 @@ for (c in 1:N.countries){
   log_rr_prec<-readRDS(file=paste0(input_directory,'/', country, "_log_rr_best_t_samples.prec.rds"))
   time<-as.Date(as.numeric(dimnames(log_rr_q)[[1]]), origin="1970-01-01" )  
   
-  index.post<-which(time>=eval_period[1] & time<=eval_period[2])  
+  index.post<-which(time>=(eval_period[1] %m-% months(pre.vax.time)) & time<=eval_period[2])  
   if (length(index.post)>max.time.points){ index.post<-index.post[1:max.time.points] } 
   
   if(subnational[c]==0){  #National-level only
@@ -107,6 +107,8 @@ out<-rnorm(n=max.time.points)
 ds.sp<-cbind.data.frame(out,t.index)
 
 spl.t.std<-bs(1:max.time.points, degree=3,df=N.knots, intercept=FALSE) 
+zeros.pre<-matrix(0, nrow=pre.vax.time, ncol=ncol(spl.t.std))
+spl.t.std<-rbind(zeros.pre,spl.t.std )
 rowSums(spl.t.std)
 matplot(spl.t.std, type='l')
 spl.t.std<-cbind(rep(1, nrow(spl.t.std)), spl.t.std)
