@@ -118,9 +118,9 @@ model_jags<-jags.model(textConnection(model_string),
 update(model_jags, n.iter=5000)  
 
 posterior_samples<-coda.samples(model_jags, 
-                                variable.names=c("reg_mean", "beta", "w_true"),
+                                variable.names=c("reg_mean", "beta", "w_true",'theta','mu2'),
                                 thin=10,
-                                n.iter=5000)
+                                n.iter=50000)
 #plot(posterior_samples, ask=TRUE)
 
 
@@ -196,7 +196,6 @@ for(i in 1:nrow(betas.m1)){ #by iteration
 preds.nobias.q<-as.data.frame(t(apply(preds.nobias,c(2,3),quantile, probs=c(0.5),na.rm=TRUE)))
 preds.nobias.ucl<-as.data.frame(apply(preds.nobias,c(2,3),quantile, probs=c(0.975),na.rm=TRUE))
 preds.nobias.lcl<-as.data.frame(apply(preds.nobias,c(2,3),quantile, probs=c(0.025),na.rm=TRUE))
-
 saveRDS(preds.nobias, file=paste0(output_directory,"reg_mean_with_pooling bsplines nobias.rds"))
 
 ##small multiples plot
@@ -237,9 +236,6 @@ for (i in 1:dim(preds.nobias.q.alt )[3]){
     }
 }
 dev.off()
-
-
-
 #########################
 ##PLOTS FOR FITTED VALUES, INCLUDING INTERCEPT
 tiff(paste0(output_directory,'ucl and LCL smooth with pooling bsplines.tiff'), width = 7, height = 4, units = "in",res=200)
@@ -309,6 +305,35 @@ tiff(paste0(output_directory,'smooth with pooling bspline nobias.tiff'), width =
          }
 dev.off()
 
+############################
+################Global trend
+############################
+thetas.m1<-posterior_samples[[1]][,grep("theta\\[1",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+thetas.m2<-posterior_samples[[1]][,grep("theta\\[2",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+thetas.m3<-posterior_samples[[1]][,grep("theta\\[3",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+thetas.m4<-posterior_samples[[1]][,grep("theta\\[4",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+thetas.m5<-posterior_samples[[1]][,grep("theta\\[5",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+thetas.m6<-posterior_samples[[1]][,grep("^theta\\[6",dimnames(posterior_samples[[1]])[[2]]), drop=FALSE]
+theta.labs<-colnames(thetas.m1) # labels from matrix
+theta.labs.extract<- sub(".*\\[(.*)\\].*", "\\1", theta.labs, perl=TRUE)    #extract index numbers from the labels
+theta.labs.extract2<-matrix(as.numeric(unlist(strsplit(theta.labs.extract, ","))),ncol=3, byrow=TRUE) #format into a matrix
+preds.nobias.global<-matrix(NA,nrow=nrow(thetas.m1) ,ncol=nrow(spl.t.std))
+for(i in 1:nrow(thetas.m1)){ #by iteration
+  #ds.select 
+  j=1
+    # print(i)
+    #print(j)
+    spl.sub<-as.matrix(spl.t.std[1:ts.length.vec[j], ,drop=FALSE])
+    preds.nobias.global[i,1:ts.length.vec[j]]<-(spl.sub[,2, drop=FALSE] %*% thetas.m2[i,j, drop=FALSE] 
+                                           +spl.sub[,3, drop=FALSE] %*% thetas.m3[i,j, drop=FALSE] 
+                                           +spl.sub[,4, drop=FALSE] %*% thetas.m4[i,j, drop=FALSE] 
+                                           +spl.sub[,5, drop=FALSE] %*% thetas.m5[i,j, drop=FALSE]  )
+}
+preds.nobias.global.q<-as.data.frame(t(apply(preds.nobias.global,2,quantile, probs=c(0.025,0.5,0.975),na.rm=TRUE)))
+tiff(paste0(output_directory,'global trajectory nobias.tiff'), width = 6, height = 4, units = "in",res=200)
+matplot(preds.nobias.global.q, type='l', col='black', lty=c(2,1,2), bty='l', ylab='Log(RR)')
+abline(h=0, v=pre.vax.time+1, lty=2, col='gray')
+dev.off()
 
-save(list = ls(all.names = TRUE),file=paste0(paste0(output_directory,"pooling no covars all states b splines.RData"),envir = .GlobalEnv))
+save(list = ls(all.names = TRUE),file=paste0(paste0(output_directory,"pooling no covars all states b splines.RData")))
 
