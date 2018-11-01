@@ -19,7 +19,7 @@ pre.vax.time<-12 #how many to use when anchoring at t=0
 tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN_0int", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
 
 matplot(log_rr_q_all[,1,], type='l', bty='l', col=1:N.countries, ylim=c(-0.5,0.5))
@@ -54,7 +54,8 @@ model{
 #Second Stage Statistical Model
 ##############################################################
 beta[i,j, 1:p] ~ dmnorm(mu1[i,j, 1:p], Sigma_inv[i, 1:p, 1:p])
-for(k in 1:p){
+  mu1[i,j,1] <- 0 #Intercept is centered around 0
+for(k in 2:p){
   mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
 }
 }
