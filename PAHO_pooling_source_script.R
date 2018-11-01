@@ -12,34 +12,34 @@ for (c in 1:N.countries){
   #SET COUNTRY_SPECIFIC PARAMETERS--set eval period as intro date-1 month
   if (grepl("PAHO_ar", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2012-01-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('ar ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('ar ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_br", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2010-03-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('br ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('br ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_co", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2011-11-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('co ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('co ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_dr", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2013-09-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('dr ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('dr ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_ec", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2010-08-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('ec ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('ec ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_gy", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2011-01-01'), as.Date('2013-12-01'))
-    keep.grp=paste0('gy ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('gy ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_hr", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2011-01-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('hr ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('hr ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_mx", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2008-01-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('mx ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('mx ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_nc", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2012-01-01'), as.Date('2015-12-01'))
-    keep.grp=paste0('nc ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('nc ', age_group, ' ', hdi_level)
   } else if (grepl("PAHO_pr", country, fixed=TRUE)) {
     eval_period <- c(as.Date('2009-08-01'), as.Date('2014-12-01'))
-    keep.grp=paste0('pr ', age_group, ' ', hdi_level)
+    #keep.grp=paste0('pr ', age_group, ' ', hdi_level)
   } 
   ####################################################################
   
@@ -61,13 +61,16 @@ for (c in 1:N.countries){
     log_rr_q<-array(log_rr_q,dim=c(nrow(log_rr_q),ncol(log_rr_q),1))
     log_rr_prec<-array(log_rr_prec,dim=c(nrow(log_rr_prec),ncol(log_rr_prec),1))
   } else {  
-    select.obs<-grep(paste0("^",keep.grp), dimnames(log_rr_q)[[3]])
-    exclude.obs2<-which(apply(log_rr_prec,3,function(x)  sum(is.nan(x)))>0)  #Which states have no NaN in covariance matrix
+    select.obs<-grep('2-59m', dimnames(log_rr_q)[[3]])
+    exclude.obs1<-grep('A', dimnames(log_rr_q)[[3]])
+      exclude.obs2<-which(apply(log_rr_prec,3,function(x)  sum(is.nan(x)))>0)  #Which states have no NaN in covariance matrix
     
-    select.obs.state<-setdiff(select.obs,exclude.obs2)      
-    log_rr_q <-log_rr_q[index.post,,select.obs.state]
+    if(length(select.obs)>1){select.obs.state<-setdiff(select.obs,unique(c(exclude.obs1,exclude.obs2)  ))  }  
+    if(length(select.obs)==1){select.obs.state<-setdiff(select.obs,unique(c(exclude.obs2)  ))  }  
+      
+    log_rr_q <-log_rr_q[index.post,,select.obs.state, drop=FALSE]
     #log_rr_sd <-log_rr_sd[,index.post,]
-    log_rr_prec<-log_rr_prec[index.post,index.post,select.obs.state]
+    log_rr_prec<-log_rr_prec[index.post,index.post,select.obs.state, drop=FALSE]
   }
   N.states[c]<-dim(log_rr_q)[3]
   log.rr.compile[[c]]<-log_rr_q
@@ -81,15 +84,17 @@ log_rr_prec_all<-array(NA, dim=c(tot_time,tot_time,max(N.states),N.countries))
 ts.length<-rep(NA, times=N.countries)
 for(i in 1:N.countries){
   for(j in 1:N.states[i]){
+    print(i)
+    print(j)
     log_rr_q_all[1:nrow(log.rr.compile[[i]]),j,i]<-log.rr.compile[[i]][,2,j] #Extract the median
     log_rr_prec_all[1:dim(log.rr.prec.mat.all[[i]])[1],1:dim(log.rr.prec.mat.all[[i]])[1],j,i]<-log.rr.prec.mat.all[[i]][,,j]
   }
   ts.length[i]<-nrow(log.rr.compile[[i]])
-  if(N.states[i]>1){
+  #if(N.states[i]>1){
     state.labels[1:N.states[i] ,i]<-dimnames(log.rr.compile[[i]])[[3]]
-  }else{
-    state.labels[1,i]<-'national'
-  }
+  # }else{
+  #   state.labels[1,i]<-'national'
+  # }
 }
 N.time.series <- sum(N.states)
 
@@ -123,7 +128,7 @@ ts.length.vec<-as.vector(t(ts.length_mat))[!is.na(as.vector(t(ts.length_mat)))]
 #Matrices to input to JAGS
 #I_Sigma<-replicate( N.countries, diag(p) )
 p=N.knots+1 #intercept and slope for each time series
-q=1  #2nd level predictors of intercept and slope q=1 for intercept only
+q=3  #2nd level predictors of intercept and slope q=1 for intercept only
 I_Sigma<-diag(p)  #For p=N vcovariates of intercept and slope
 I_Omega<-diag(q)  # q= number of predictors of the p slopes 
 m<-1  #m=number of country-level covariates
@@ -134,5 +139,13 @@ for(i in 1:N.countries){
   }
 }
 #Z needs to be an array i,j,q ; with assignment of covariate based on hdi.index df
+hdi<-t(matrix(word(state.labels,3),nrow=nrow(state.labels), ncol=ncol(state.labels)))
+hdi[hdi=='A']<-"Low"  #if only category available is "A", assume it is low (ie nc)
+hdi.low<-matrix(0, nrow=nrow(hdi),ncol=ncol(hdi))
+hdi.low[hdi=="Low"]<-1
+hdi.med<-matrix(0, nrow=nrow(hdi),ncol=ncol(hdi))
+hdi.med[hdi=="Med"]<-1
 z<-array(0, dim=c(dim(log_rr_q_all)[3], dim(log_rr_q_all)[2],q))
 z[,,1]<-1 #intercept for z 
+z[,,2]<-hdi.low #intercept for z 
+z[,,3]<-hdi.med #intercept for z 

@@ -8,18 +8,18 @@ library(splines)
 library(lubridate)
 
 ####SET INPUT PARAMETERS#############################################################################################################
-countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr','PAHO_mxA','PAHO_nc') # PAHO_hr 'PAHO_gy',PAHO_nc
+countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr','PAHO_mx','PAHO_nc') # PAHO_hr 'PAHO_gy',PAHO_nc
 #countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
 
 age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
-hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
-subnational=rep(0, length(countries))
+hdi_level <- 'HDI' # Low HDI, Med HDI, Hi  HDI, A
+subnational=rep(1, length(countries))
 max.time.points=48
 pre.vax.time<-12 #how many to use when anchoring at t=0
 tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_subnat_MVN", max(subnational),'/')
 ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
 
 matplot(log_rr_q_all[,1,], type='l', bty='l', col=1:N.countries, ylim=c(-0.5,0.5))
@@ -120,7 +120,7 @@ update(model_jags, n.iter=5000)
 posterior_samples<-coda.samples(model_jags, 
                                 variable.names=c("reg_mean", "beta", "w_true",'theta','mu2'),
                                 thin=10,
-                                n.iter=50000)
+                                n.iter=5000)
 #plot(posterior_samples, ask=TRUE)
 
 
