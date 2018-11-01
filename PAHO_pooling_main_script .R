@@ -78,24 +78,24 @@ Sigma[i, 1:p, 1:p] <- inverse(Sigma_inv[i, 1:p, 1:p])
 sigma2_phi_inv <- 1/(sigma_phi*sigma_phi)
 sigma_phi ~ dunif(0, 1000)
 
-# for(k in 1:p){
-# Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
-# Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
-# for(l in 1:q){
-#   for(r in 1:m){
-#     theta[k,l,r] ~ dnorm(0, 0.0001)
-#   }
-#   }
-# }
 for(k in 1:p){
-     Omega_inv[k, 1:q, 1:q] <- 1/(Omega[k, 1:q, 1:q]*Omega[k, 1:q, 1:q])
-     Omega[k, 1:q, 1:q] ~ dunif(0, 1000)
-     for(l in 1:q){
-         for(r in 1:m){
-               theta[k,l,r] ~ dnorm(0, 0.0001)
-              }
-          }
-    }
+Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
+Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
+for(l in 1:q){
+  for(r in 1:m){
+    theta[k,l,r] ~ dnorm(0, 0.0001)
+  }
+  }
+}
+# for(k in 1:p){
+#      Omega_inv[k, 1:q, 1:q] <- 1/(Omega[k, 1:q, 1:q]*Omega[k, 1:q, 1:q])
+#      Omega[k, 1:q, 1:q] ~ dunif(0, 1000)
+#      for(l in 1:q){
+#          for(r in 1:m){
+#                theta[k,l,r] ~ dnorm(0, 0.0001)
+#               }
+#           }
+#     }
 }
  "
 #Model Organization
