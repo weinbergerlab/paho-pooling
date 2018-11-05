@@ -61,7 +61,7 @@ for (c in 1:N.countries){
     log_rr_q<-array(log_rr_q,dim=c(nrow(log_rr_q),ncol(log_rr_q),1))
     log_rr_prec<-array(log_rr_prec,dim=c(nrow(log_rr_prec),ncol(log_rr_prec),1))
   } else {  
-    select.obs<-grep('2-59m', dimnames(log_rr_q)[[3]])
+    select.obs<-grep(age_group, dimnames(log_rr_q)[[3]])
     exclude.obs1<-grep('A', dimnames(log_rr_q)[[3]])
       exclude.obs2<-which(apply(log_rr_prec,3,function(x)  sum(is.nan(x)))>0)  #Which states have no NaN in covariance matrix
     
