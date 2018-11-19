@@ -26,6 +26,9 @@ matplot(log_rr_q_all[,1,], type='l', bty='l', col=1:N.countries, ylim=c(-0.5,0.5
 legend(x=30, y=-1, countries, col=1:N.countries, lty=2)
 abline(h=0, v=pre.vax.time)
 
+
+log_rr_q_1<-matrix(log_rr_q_all[(pre.vax.time+1),,],nrow=dim(log_rr_q_all)[2],ncol=dim(log_rr_q_all)[3])
+log_rr_prec_1<-matrix(log_rr_prec_all[(pre.vax.time+1),(pre.vax.time+1),,],nrow=dim(log_rr_q_all)[2],ncol=dim(log_rr_q_all)[3])
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
 ###################################################
@@ -37,76 +40,33 @@ model{
 #################
 #Observation model
 #################
-      w_hat[1:ts.length[i,j], j,i] ~ dmnorm(w_true[i,j, 1:ts.length[i,j]], log_rr_prec_all[1:ts.length[i,j], 1:ts.length[i,j], j,i])
+      w_hat[j,i] ~ dnorm(w_true[i,j], log_rr_prec_all[ j,i])
 #################
-#Model of 'true' time series data
+#Model of 'true' data
 #################
-      w_true[i,j, 1:ts.length[i,j]] ~ dmnorm(reg_mean[i,j, 1:ts.length[i,j]], w_true_cov_inv[i,j, 1:ts.length[i,j], 1:ts.length[i,j]])
-      reg_mean[i,j, 1:ts.length[i,j]]<-spl.t.std[1:ts.length[i,j],]%*%beta[i,j, 1:p]
-     for(k1 in 1:ts.length[i,j]){
-        for(k2 in 1:ts.length[i,j]){
-           w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
-        }
-     }
-      w_true_var_inv[i,j]<-1/(w_true_sd[i,j]*w_true_sd[i,j])
-      w_true_sd[i,j] ~ dunif(0, 1000)
+      w_true[i,j] ~ dnorm(mu1, beta.prec )
+      #prec.reg.mean[i,j]<-1/sd.reg.mean[i,j]^2
+      #sd.reg.mean[i,j]~dunif(0,100)
 ##############################################################
 #Second Stage Statistical Model
 ##############################################################
-beta[i,j, 1:p] ~ dmnorm(mu1[i,j, 1:p], Sigma_inv[i, 1:p, 1:p])
-for(k in 1:p){
-  mu1[i,j,k] <- z[i,j, 1:q]%*%gamma[i,k, 1:q]
-}
-}
-for(k in 1:p){
-  
-  ###############################################################
-  #Third Stage Statistical Model
-  ###############################################################
-  gamma[i,k, 1:q] ~ dmnorm(mu2[i,k, 1:q], Omega_inv[k, 1:q, 1:q])
-    for(l in 1:q){
-     mu2[i,k,l] <- w[i, 1:m]%*%theta[k,l, 1:m]
+beta[i,j] ~ dnorm(mu1, beta.prec )
     }
-  } 
-Sigma_inv[i, 1:p, 1:p] ~ dwish(I_Sigma[1:p, 1:p], (p + 1))
-Sigma[i, 1:p, 1:p] <- inverse(Sigma_inv[i, 1:p, 1:p])
-}
-
-#############################################################
-#Remaining Prior Distributions
-#############################################################
-sigma2_phi_inv <- 1/(sigma_phi*sigma_phi)
-sigma_phi ~ dunif(0, 1000)
-
-# for(k in 1:p){
-# Omega_inv[k, 1:q, 1:q] ~ dwish(I_Omega[1:q, 1:q], (q + 1))
-# Omega[k, 1:q, 1:q] <- inverse(Omega_inv[k, 1:q, 1:q])
-# for(l in 1:q){
-#   for(r in 1:m){
-#     theta[k,l,r] ~ dnorm(0, 0.0001)
-#   }
-#   }
-# }
-for(k in 1:p){
-     Omega_inv[k, 1:q, 1:q] <- 1/(Omega[k, 1:q, 1:q]*Omega[k, 1:q, 1:q])
-     Omega[k, 1:q, 1:q] ~ dunif(0, 1000)
-     for(l in 1:q){
-         for(r in 1:m){
-               theta[k,l,r] ~ dnorm(0, 0.0001)
-              }
-          }
-    }
+} 
+beta.prec<- 1/beta.prec.sd^2
+beta.prec.sd~dunif(0,100)
+mu1~dnorm(0,1e-4)
 }
  "
 #Model Organization
 model_jags<-jags.model(textConnection(model_string),
                        data=list('n.countries' = N.countries, 
                                  'N.states' = N.states, 
-                                 'w_hat' = log_rr_q_all,
-                                 'log_rr_prec_all' = log_rr_prec_all,  
-                                 'spl.t.std' = spl.t.std, 
+                                 'w_hat' = log_rr_q_1,
+                                 'log_rr_prec_all' = log_rr_prec_1,  
+                               
                                  'ts.length' = ts.length_mat,
-                                 'p'=p,
+                                 'p'=1,
                                  'q'=q,
                                  'm'=m,
                                  'w'=w,
@@ -118,7 +78,7 @@ model_jags<-jags.model(textConnection(model_string),
 update(model_jags, n.iter=5000)  
 
 posterior_samples<-coda.samples(model_jags, 
-                                variable.names=c("reg_mean", "beta", "w_true",'theta','mu2'),
+                                variable.names=c( "w_true",'mu1'),
                                 thin=10,
                                 n.iter=50000)
 #plot(posterior_samples, ask=TRUE)
