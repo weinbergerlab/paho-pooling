@@ -8,10 +8,11 @@ library(splines)
 library(lubridate)
 
 ####SET INPUT PARAMETERS#############################################################################################################
-countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr','PAHO_mxA','PAHO_nc') # PAHO_hr 'PAHO_gy',PAHO_nc
+#countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr','PAHO_mxA','PAHO_nc') # PAHO_hr 'PAHO_gy',PAHO_nc
 #countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
+countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec','PAHO_hr', 'PAHO_mxA','PAHO_nc','PAHO_pr') # PAHO_hr 'PAHO_gy',PAHO_nc
 
-age_group <- '2-59m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
+age_group <- '<2m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
 hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=rep(0, length(countries))
 max.time.points=48
@@ -20,11 +21,17 @@ tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
 output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
-ifelse(!dir.exists(output_directory), dir.create(output_directory), FALSE)
+output_directory<-gsub("<2", "u2", output_directory)
+ifelse(!dir.exists(output_directory), dir.create(file.path(output_directory)), FALSE)
 
 matplot(log_rr_q_all[,1,], type='l', bty='l', col=1:N.countries, ylim=c(-0.5,0.5))
 legend(x=30, y=-1, countries, col=1:N.countries, lty=2)
 abline(h=0, v=pre.vax.time)
+
+##test Mexico
+ # mod1<-lm(log_rr_q_all[,1,7] ~ spl.t.std[,2]+spl.t.std[,3] +spl.t.std[,4]+spl.t.std[,5])
+ # pred1<-predict(mod1)
+ # plot(pred1-coef(mod1)[1], ylim=c(min(pred1),0.2))
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
@@ -120,7 +127,7 @@ update(model_jags, n.iter=5000)
 posterior_samples<-coda.samples(model_jags, 
                                 variable.names=c("reg_mean", "beta", "w_true",'theta','mu2'),
                                 thin=10,
-                                n.iter=50000)
+                                n.iter=5000)
 #plot(posterior_samples, ask=TRUE)
 
 
