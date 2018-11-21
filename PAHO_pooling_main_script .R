@@ -127,7 +127,7 @@ update(model_jags, n.iter=5000)
 posterior_samples<-coda.samples(model_jags, 
                                 variable.names=c("reg_mean", "beta", "w_true",'theta','mu2'),
                                 thin=10,
-                                n.iter=5000)
+                                n.iter=50000)
 #plot(posterior_samples, ask=TRUE)
 
 
