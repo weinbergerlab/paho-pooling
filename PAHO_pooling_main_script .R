@@ -36,7 +36,7 @@ nodata.country<-is.na(log_rr_q_all[1,1,])
 log_rr_q_all<-log_rr_q_all[,,!nodata.country, drop=FALSE]
 log_rr_prec_all<-log_rr_prec_all[,,,!nodata.country, drop=FALSE]
 countries<-countries[!nodata.country]
-
+N.countries<-length(countries)
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
 ###################################################
