@@ -1,6 +1,7 @@
 
 #Loop trough all of the age categories
-for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
+#for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
+for(agegrp.select in c( '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
 
 rm(list=ls(all=TRUE))
 require(reshape)
@@ -14,7 +15,7 @@ library(lubridate)
 ####SET INPUT PARAMETERS#############################################################################################################
 countries<-c('PAHO_ar','PAHO_br', 'PAHO_co','PAHO_dr',  'PAHO_ec','PAHO_hr', 'PAHO_mxA','PAHO_nc','PAHO_pr') # PAHO_hr 'PAHO_gy',PAHO_nc
 
-age_group <- '<2m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
+age_group <- agegrp.select # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
 hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
 subnational=rep(0, length(countries))
 max.time.points=48
