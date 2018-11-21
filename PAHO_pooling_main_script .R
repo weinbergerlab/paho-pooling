@@ -8,9 +8,7 @@ library(splines)
 library(lubridate)
 
 ####SET INPUT PARAMETERS#############################################################################################################
-#countries<-c('PAHO_ar','PAHO_br', 'PAHO_co', 'PAHO_dr', 'PAHO_ec',  'PAHO_pr','PAHO_mxA','PAHO_nc') # PAHO_hr 'PAHO_gy',PAHO_nc
-#countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec',  'PAHO_pr') #PAHO_mx, PAHO_hr
-countries<-c('PAHO_ar','PAHO_br', 'PAHO_co',  'PAHO_ec','PAHO_hr', 'PAHO_mxA','PAHO_nc','PAHO_pr') # PAHO_hr 'PAHO_gy',PAHO_nc
+countries<-c('PAHO_ar','PAHO_br', 'PAHO_co','PAHO_dr',  'PAHO_ec','PAHO_hr', 'PAHO_mxA','PAHO_nc','PAHO_pr') # PAHO_hr 'PAHO_gy',PAHO_nc
 
 age_group <- '<2m' # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
 hdi_level <- 'A' # Low HDI, Med HDI, Hi  HDI, A
@@ -32,6 +30,12 @@ abline(h=0, v=pre.vax.time)
  # mod1<-lm(log_rr_q_all[,1,7] ~ spl.t.std[,2]+spl.t.std[,3] +spl.t.std[,4]+spl.t.std[,5])
  # pred1<-predict(mod1)
  # plot(pred1-coef(mod1)[1], ylim=c(min(pred1),0.2))
+
+#Check if country has data, and if not, remove it from the array
+nodata.country<-is.na(log_rr_q_all[1,1,])
+log_rr_q_all<-log_rr_q_all[,,!nodata.country, drop=FALSE]
+log_rr_prec_all<-log_rr_prec_all[,,,!nodata.country, drop=FALSE]
+countries<-countries[!nodata.country]
 
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
