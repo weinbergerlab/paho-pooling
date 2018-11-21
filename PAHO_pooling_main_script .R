@@ -1,3 +1,7 @@
+
+#Loop trough all of the age categories
+for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
+
 rm(list=ls(all=TRUE))
 require(reshape)
 require(reshape2)
@@ -347,4 +351,4 @@ abline(h=0, v=pre.vax.time+1, lty=2, col='gray')
 dev.off()
 
 save(list = ls(all.names = TRUE),file=paste0(paste0(output_directory,"pooling no covars all states b splines.RData")))
-
+}
