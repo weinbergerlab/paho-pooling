@@ -3,7 +3,7 @@
 #for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
 rm(list=ls(all=TRUE))
 for(agegrp.select in c( '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
-
+print(agegrp.select)
 require(reshape)
 require(reshape2)
 require(abind)
