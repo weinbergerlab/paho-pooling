@@ -41,6 +41,8 @@ nodata.country<-is.na(log_rr_q_all[1,1,])
 log_rr_q_all<-log_rr_q_all[,,!nodata.country, drop=FALSE]
 log_rr_prec_all<-log_rr_prec_all[,,,!nodata.country, drop=FALSE]
 countries<-countries[!nodata.country]
+saveRDS(countries, file=paste0(output_directory, "country_labs.rds"))
+
 N.countries<-length(countries)
 ###################################################
 ##### JAGS (Just Another Gibbs Sampler) model #####
@@ -365,8 +367,25 @@ for(agegrp.select in c( '<2m','2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
   output_directory<-gsub("<2", "u2", output_directory)
   
   ds1<-readRDS( file=paste0(output_directory, "reg_mean_with_pooling bsplines.rds"))
-  preds.q<- apply(ds1,c(2,3),quantile, probs=c(0.025,0.5,0.975),na.rm=TRUE)
-  agegrp.lab<-  gsub("<2", "u2", age_group)
+  lab1<-readRDS( file=paste0(output_directory, "country_labs.rds"))
   
-  assign(paste0("DF", agegrp.lab), ds1)
+  preds.q<- apply(ds1,c(2,3),quantile, probs=c(0.025,0.5,0.975),na.rm=TRUE)
+  dimnames(preds.q)[[3]]<-lab1
+  agegrp.lab<-  gsub("<2", "u2", age_group)
+  agegrp.lab<-  gsub("-", "_", agegrp.lab)
+  
+  assign(paste0("DF", agegrp.lab), preds.q)
 }
+#Peru
+
+pr.u2<-t(DFu2m[,,'PAHO_pr'])
+pr.2_11m<-t(DF2_11m[,,'PAHO_pr'])
+pr.12_23m<-t(DF12_23m[,,'PAHO_pr'])
+pr.24_59m<-t(DF24_59m[,,'PAHO_pr'])
+
+col.plot<-c('#e41a1c','#377eb8', '#4daf4a', '#984ea3')
+plot(pr.u2[,'50%']-pr.u2[1,'50%'], type='l', col=col.plot[1],bty='l', ylim=c(-1,0.5))
+points(pr.2_11m[,'50%']-pr.2_11m[1,'50%'], type='l', col=col.plot[2])
+points(pr.12_23m[,'50%']-pr.12_23m[1,'50%'], type='l', col=col.plot[3])
+points(pr.24_59m[,'50%']-pr.24_59m[1,'50%'], type='l', col=col.plot[4])
+legend(1,-0.5,legend=c('<2m','2-11m','12-23m','24-59m'), col=col.plot, lty=1,box.lty=0)
