@@ -353,3 +353,20 @@ dev.off()
 
 save(list = ls(all.names = TRUE),file=paste0(paste0(output_directory,"pooling no covars all states b splines.RData")))
 }
+
+
+
+#################################
+#################################
+#COMBINE TOGETHER ESTIMATES FROM DIFFERENT AGE GROUPS
+for(agegrp.select in c( '<2m','2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
+  age_group <- agegrp.select # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
+  output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+  output_directory<-gsub("<2", "u2", output_directory)
+  
+  ds1<-readRDS( file=paste0(output_directory, "reg_mean_with_pooling bsplines.rds"))
+  preds.q<- apply(ds1,c(2,3),quantile, probs=c(0.025,0.5,0.975),na.rm=TRUE)
+  agegrp.lab<-  gsub("<2", "u2", age_group)
+  
+  assign(paste0("DF", agegrp.lab), ds1)
+}
