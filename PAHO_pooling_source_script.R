@@ -66,7 +66,9 @@ for (c in 1:N.countries){
   mods<-lapply(log.rr.median.spl, seas.func1 )
   names(mods)<-dimnames(log_rr_q)[[3]]
   print(mods)
-  saveRDS(mods, file=paste0(output_directory, country,"Seasmods.rds"))
+ # agegrplab<-agegrp.select
+  #if(agegrp.select=='<2m'){agegrplab<-'u2m'}
+  saveRDS(mods, file=paste0(output_directory,'_', country,"Seasmods.rds"))
 }
 
   
