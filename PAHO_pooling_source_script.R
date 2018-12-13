@@ -122,8 +122,8 @@ ts.length.vec<-as.vector(t(ts.length_mat))[!is.na(as.vector(t(ts.length_mat)))]
 
 #Matrices to input to JAGS
 #I_Sigma<-replicate( N.countries, diag(p) )
-p=N.knots+1 #intercept and slope for each time series
-q=1  #2nd level predictors of intercept and slope q=1 for intercept only
+p=4 #intercept and slope for each time series
+q=4  #2nd level predictors of intercept and slope q=1 for intercept only
 I_Sigma<-diag(p)  #For p=N vcovariates of intercept and slope
 I_Omega<-diag(q)  # q= number of predictors of the p slopes 
 m<-1  #m=number of country-level covariates
