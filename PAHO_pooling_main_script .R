@@ -2,7 +2,7 @@
 #Loop trough all of the age categories
 #for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
 rm(list=ls(all=TRUE))
-for(agegrp.select in c( '<2m','2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
+for(agegrp.select in c( '<2m','2-11m', '12-23m', '24-59m')){
 print(agegrp.select)
 require(reshape)
 require(reshape2)
@@ -23,7 +23,7 @@ pre.vax.time<-12 #how many to use when anchoring at t=0
 tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results CP/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
 output_directory<-gsub("<2", "u2", output_directory)
 ifelse(!dir.exists(output_directory), dir.create(file.path(output_directory)), FALSE)
 
@@ -101,9 +101,11 @@ Omega_inv[1:4, 1:4] ~ dwish(I_Omega[1:4, 1:4], (4 + 1))
 Omega[1:4, 1:4]<-inverse(Omega_inv[1:4, 1:4])
 Sigma_inv[1:4, 1:4] ~ dwish(I_Sigma[1:4, 1:4], (4 + 1))
 Sigma[1:4, 1:4]<-inverse(Sigma_inv[1:4, 1:4])
-for(j in 1:4){
+for(j in c(1,3,4)){
 lambda[j] ~ dnorm(0, 1)
 }
+lambda[2] ~ dnorm(0, 1)T(,0) #Truncate slope to be 0 or less
+
 }
 "
 #Model Organization
@@ -116,15 +118,15 @@ model_jags<-jags.model(textConnection(model_string),
                                  'I_Omega'= I_Omega,
                                  'max.time.points'=max.time.points,
                                  'time.index'=time.index,
-                                 'I_Sigma'=I_Sigma), n.chains=1, n.adapt=1000) 
+                                 'I_Sigma'=I_Sigma), n.chains=2, n.adapt=1000) 
 
 #Posterior Sampling
-update(model_jags, n.iter=5000)  
+update(model_jags, n.iter=10000)  
 
 posterior_samples<-coda.samples(model_jags, 
-                                variable.names=c("reg_mean",'reg_unbias' ,'cp1','cp2',"beta"),
+                                variable.names=c("reg_mean",'reg_unbias' ,'cp1','cp2',"beta",'lambda'),
                                 thin=10,
-                                n.iter=50000)
+                                n.iter=10000)
 #plot(posterior_samples, ask=TRUE)
 
 
@@ -175,18 +177,21 @@ names(cp1.lab.spl)<-c('country','state')
 par(mfrow=c(2,2))
 plot(y=1:nrow(quant.cp1), x=quant.cp1[,'50%'], bty='l')
 library(ggplot2)
-plot.cp<-cbind.data.frame('strata'=1:nrow(quant.cp1),'median.cp'=quant.cp1[,'50%'], 'inv.var.cp'=1/var.cp1,beta3.lab.spl)
+plot.cp<-cbind.data.frame('strata'=1:nrow(quant.cp1),'median.cp'=quant.cp1[,'50%'],'lcl.cp'=quant.cp1[,'2.5%'],'ucl.cp'=quant.cp1[,'97.5%'], 'inv.var.cp'=1/var.cp1,beta3.lab.spl)
 plot.cp<-plot.cp[order(plot.cp$country),]
 plot.cp$order2<-1:nrow(plot.cp)
 plot.cp$country2<-NA
 for(i in 1:length(countries)){plot.cp$country2[plot.cp$country==i] <-countries[i] }
-ggplot(data=plot.cp, aes(x=median.cp, y=order2, color=country2)) +
+tiff(paste0(output_directory,'cp by country.tiff'), width = 7, height = 8, units = "in",res=200)
+cp.plot<-ggplot(data=plot.cp, aes(x=median.cp, y=order2, color=country2)) +
   geom_point(aes(size=inv.var.cp)) +
   scale_size_continuous(range=c(1,15)) +
   theme_bw()+
   guides( size = FALSE)+
   # theme(legend.position = "none")+
   scale_color_manual(values=c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6',  '#6a3d9a'))
+print(cp.plot)
+dev.off()
 saveRDS(plot.cp, file=paste0(output_directory,'CP1 pool model.rds'))
 
 
@@ -211,20 +216,25 @@ plot.slp<-plot.slp[order(plot.slp$country),]
 plot.slp$order2<-1:nrow(plot.slp)
 plot.slp$country2<-NA
 for(i in 1:length(countries)){plot.slp$country2[plot.slp$country==i] <-countries[i] }
-ggplot(data=plot.slp, aes(x=median.slp, y=order2, color=country2)) +
+tiff(paste0(output_directory,'country.slope.tiff'), width = 7, height = 8, units = "in",res=200)
+slp.plot<-ggplot(data=plot.slp, aes(x=median.slp, y=order2, color=country2)) +
   geom_point(aes(size=inv.var.slp)) +
   scale_size_continuous(range=c(1,15)) +
   theme_bw()+
   guides( size = FALSE)+
   # theme(legend.position = "none")+
   scale_color_manual(values=c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6',  '#6a3d9a'))
+print(slp.plot)
+dev.off()
 saveRDS(plot.slp, file=paste0(output_directory,"slope pool model.rds"))
 
 ##########################################
 
 #Relationship between change point location and slope
+tiff(paste0(output_directory,'cp vs slope.tiff'), width = 7, height = 8, units = "in",res=200)
 par(mfrow=c(1,1), mar=c(4,4,1,1))
 plot(quant.slp1[,'50%'], quant.cp1[,'50%'], col=beta2.lab.spl$country,bty='l', ylab="Change point", xlab="Slope")
+dev.off()
 
 ##melt and cast predicted values into 4D array N,t,i,j array
 reg_mean<-posterior_samples[[1]][,grep("reg_mean",dimnames(posterior_samples[[1]])[[2]])]
@@ -265,17 +275,14 @@ for(i in 1:length(countries)){
     title(countries[i])
   }
 dev.off()
-saveRDS(preds.unbias.q, file=paste0(output_directory,"reg_mean_with_pooling cp nobias.rds"))
+saveRDS(preds.unbias.q, file=paste0(output_directory,"reg_mean_with_pooling CP nobias.rds"))
 
 
 
-saveRDS(preds, file=paste0(output_directory, "reg_mean_with_pooling CP.rds"))
+saveRDS(reg_unbias_c, file=paste0(output_directory, "reg_mean_unbias_with_pooling CP.rds"))
 saveRDS(state.labels, file=paste0(output_directory,"state labels.rds"))
 saveRDS(posterior_samples, file=paste0(output_directory, "posterior samples pooling with CP.rds"))
 
-###Remove bias term (intercept)
-preds.nobias.q<-preds.unbias.q
-saveRDS(preds.unbias, file=paste0(output_directory,"reg_mean_with_pooling CP nobias.rds"))
 # 
 # ##small multiples plot
 # country=beta.labs.extract2[,1]
@@ -317,7 +324,7 @@ saveRDS(preds.unbias, file=paste0(output_directory,"reg_mean_with_pooling CP nob
 # dev.off()
 # 
 # 
- }
+}
 
 #################################
 #################################
@@ -325,7 +332,7 @@ saveRDS(preds.unbias, file=paste0(output_directory,"reg_mean_with_pooling CP nob
 for(agegrp.select in c( '<2m','2-11m',  '12-23m', '24-59m')){
  print(agegrp.select)
    age_group <- agegrp.select # <2m, 2-11m, 2-23m, 2-59m, 12-23m, 24-59m
-  output_directory<- paste0(dirname(getwd()), "/Results/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+  output_directory<- paste0(dirname(getwd()), "/Results CP/",'A',"_",age_group, "_nat_MVN", '0','/')
   output_directory<-gsub("<2", "u2", output_directory)
   
   ds1<-readRDS( file=paste0(output_directory,"reg_mean_with_pooling CP nobias.rds"))
@@ -345,11 +352,11 @@ pr.2_11m<-t(DF2_11m[,,'PAHO_pr'])
 pr.12_23m<-t(DF12_23m[,,'PAHO_pr'])
 pr.24_59m<-t(DF24_59m[,,'PAHO_pr'])
 
-tiff('pr.age.comp.tiff', width=5, height=4 , units='in', res=200)
+tiff(paste0(output_directory,'pr.age.comp.tiff'), width=5, height=4 , units='in', res=200)
 col.plot<-c('#e41a1c','#377eb8', '#4daf4a', '#984ea3')
-matplot(pr.u2, type='l', col=col.plot[1],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5))
-matplot(pr.2_11m, type='l', col=col.plot[2],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
-matplot(pr.12_23m, type='l', col=col.plot[3],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
-matplot(pr.24_59m, type='l', col=col.plot[4],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
-legend(0,-0.4,legend=c('<2m','2-11m','12-23m','24-59m'), col=col.plot, lty=1,box.lty=0)
+matplot(((1:tot_time)-pre.vax.time),pr.u2, type='l', col=col.plot[1],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5))
+matplot(((1:tot_time)-pre.vax.time),pr.2_11m, type='l', col=col.plot[2],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
+matplot(((1:tot_time)-pre.vax.time),pr.12_23m, type='l', col=col.plot[3],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
+matplot(((1:tot_time)-pre.vax.time),pr.24_59m, type='l', col=col.plot[4],bty='l', ylim=c(-1,0.5), lty=c(2,1,2), lwd=c(0.5,2,0.5),add=TRUE)
+legend(-10,-0.4,legend=c('<2m','2-11m','12-23m','24-59m'), col=col.plot, lty=1,box.lty=0)
 dev.off()
