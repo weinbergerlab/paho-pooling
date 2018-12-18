@@ -65,15 +65,13 @@ for(v in 1:ts.length[i,j]){
 ##################### 
 #CHANGE POINT MODEL #
 #####################
-reg_mean[i,j,v]<-(beta[i,j,1] 
-+ step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*beta[i,j,2]*(time.index[v] - cp1[i,j]) 
-+ step(time.index[v] - cp2[i,j])*beta[i,j,2]*(cp2[i,j] - cp1[i,j])
-)
-reg_unbias[i,j,v]<-(
-step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*beta[i,j,2]*(time.index[v] - cp1[i,j]) 
-+ step(time.index[v] - cp2[i,j])*beta[i,j,2]*(cp2[i,j] - cp1[i,j])
-)
+reg_mean[i,j,v]<-(beta[i,j,1] +
+           step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*slope[i,j]*(time.index[v] - cp1[i,j]) 
+          +step(time.index[v] - cp2[i,j])*slope[i,j]*(cp2[i,j] - cp1[i,j]))
+reg_unbias[i,j,v]<-(step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*slope[i,j]*(time.index[v] - cp1[i,j]) 
+              +step(time.index[v] - cp2[i,j])*slope[i,j]*(cp2[i,j] - cp1[i,j]))
 }
+slope[i,j]<- -exp(beta[i,j,2]) #Ensures slope is negative
 for(k1 in 1:ts.length[i,j]){
 for(k2 in 1:ts.length[i,j]){
 w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
@@ -99,12 +97,12 @@ beta[i,j, 1:4] ~ dmnorm(lambda[1:4], Omega_inv[1:4, 1:4])
 #######################################################
 Omega_inv[1:4, 1:4] ~ dwish(I_Omega[1:4, 1:4], (4 + 1))
 Omega[1:4, 1:4]<-inverse(Omega_inv[1:4, 1:4])
-Sigma_inv[1:4, 1:4] ~ dwish(I_Sigma[1:4, 1:4], (4 + 1))
-Sigma[1:4, 1:4]<-inverse(Sigma_inv[1:4, 1:4])
+# Sigma_inv[1:4, 1:4] ~ dwish(I_Sigma[1:4, 1:4], (4 + 1))
+# Sigma[1:4, 1:4]<-inverse(Sigma_inv[1:4, 1:4])
 for(j in c(1,3,4)){
 lambda[j] ~ dnorm(0, 1)
 }
-lambda[2] ~ dnorm(0, 1)T(,0) #Truncate slope to be 0 or less
+lambda[2] ~ dnorm(0, 1e-4)
 
 }
 "
