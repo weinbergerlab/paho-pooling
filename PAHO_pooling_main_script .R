@@ -266,7 +266,7 @@ par(mfrow=c(5,2), mar=c(4,2,1,1))
 for(i in 1:length(countries)){
  # for(j in 1:N.states[i]){
     plot.data<-t(preds.unbias.q[,,i])
-    matplot( ((1:tot_time)-pre.vax.time), plot.data,type='l',yaxt='n', xlim=c(0, max.time.points),  ylim=c(-0.7,0.7), col='gray', lty=c(2,1,2), bty='l')
+    matplot( ((1:tot_time)-pre.vax.time), plot.data,type='l',yaxt='n', xlim=c(0, max.time.points), xlab='months post-PCV introduction', ylim=c(-0.7,0.4), col='gray', lty=c(2,1,2), bty='l')
     abline(h=0)
     axis(side=2, at=c(-0.7,-0.35,0,0.35,0.7), las=1,labels=round(exp(c(-0.7,-0.35,0,0.35,0.7)),1 ))
     # abline(v=0)
