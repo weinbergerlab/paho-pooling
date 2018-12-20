@@ -2,7 +2,7 @@
 #Loop trough all of the age categories
 #for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
 rm(list=ls(all=TRUE))
-for(agegrp.select in c( '<2m','2-11m', '12-23m', '24-59m')){
+for(agegrp.select in c( '<2m','2-11m', '12-23m', '24-59m','2-59m')){
 print(agegrp.select)
 require(reshape)
 require(reshape2)
@@ -66,12 +66,12 @@ for(v in 1:ts.length[i,j]){
 #CHANGE POINT MODEL #
 #####################
 reg_mean[i,j,v]<-(beta[i,j,1] +
-           step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*slope[i,j]*(time.index[v] - cp1[i,j]) 
-          +step(time.index[v] - cp2[i,j])*slope[i,j]*(cp2[i,j] - cp1[i,j]))
-reg_unbias[i,j,v]<-(step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*slope[i,j]*(time.index[v] - cp1[i,j]) 
-              +step(time.index[v] - cp2[i,j])*slope[i,j]*(cp2[i,j] - cp1[i,j]))
+           step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*beta[i,j,2]*(time.index[v] - cp1[i,j]) 
+          +step(time.index[v] - cp2[i,j])*beta[i,j,2]*(cp2[i,j] - cp1[i,j]))
+reg_unbias[i,j,v]<-(step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2[i,j]))*beta[i,j,2]*(time.index[v] - cp1[i,j]) 
+              +step(time.index[v] - cp2[i,j])*beta[i,j,2]*(cp2[i,j] - cp1[i,j]))
 }
-slope[i,j]<- -exp(beta[i,j,2]) #Ensures slope is negative
+#slope[i,j]<- -exp(beta[i,j,2]) #Ensures slope is negative
 for(k1 in 1:ts.length[i,j]){
 for(k2 in 1:ts.length[i,j]){
 w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
