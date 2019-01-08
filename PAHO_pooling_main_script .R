@@ -127,7 +127,7 @@ update(model_jags, n.iter=10000)
 posterior_samples<-coda.samples(model_jags, 
                                 variable.names=c("reg_mean",'reg_unbias' ,'cp1','cp2',"beta",'lambda'),
                                 thin=10,
-                                n.iter=10000)
+                                n.iter=50000)
 #plot(posterior_samples, ask=TRUE)
 
 
