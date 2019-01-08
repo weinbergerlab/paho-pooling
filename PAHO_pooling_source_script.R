@@ -1,6 +1,7 @@
 N.countries=length(countries)
 log.rr.compile <-vector("list", length(countries)) 
 log.rr.prec.mat.all<-vector("list", length(countries)) 
+log.rr.sd.mat.all<-vector("list", length(countries)) 
 N.states<-rep(NA, N.countries)
 
 for (c in 1:N.countries){
@@ -47,42 +48,60 @@ for (c in 1:N.countries){
   input_directory <- paste(dirname(getwd()),'Data',country, sep='/')
   log_rr_q<-readRDS(file=paste0(input_directory,'/', country, "_log_rr_quantiles_best.rds"))
   log_rr_prec<-readRDS(file=paste0(input_directory,'/', country, "_log_rr_best_t_samples.prec.rds"))
-  time<-as.Date(as.numeric(dimnames(log_rr_q)[[1]]), origin="1970-01-01" )  
+  country2<-substring(country,first=6)
+ # log_rr_prec_point<-readRDS(file=paste0(input_directory,'/', country2, "_SubChpt_BestModel_woPandemic_log_rr_prec_point.rds"))
+    time<-as.Date(as.numeric(dimnames(log_rr_q)[[1]]), origin="1970-01-01" )  
   
   index.post<-which(time>=(eval_period[1] %m-% months(pre.vax.time)) & time<=eval_period[2])  
   if (length(index.post)>tot_time){ index.post<-index.post[1:tot_time] } 
   
+
   if(subnational[c]==0){  #National-level only
     # limit by age group
     keep.index<-which(dimnames(log_rr_q)[[3]]== (keep.grp))
     log_rr_q<-log_rr_q[index.post,,keep.index]
     log_rr_prec<-log_rr_prec[index.post,index.post,keep.index]
-    
+    #log_rr_prec_point<-log_rr_prec_point[1,index.post, keep.index ]
     log_rr_q<-array(log_rr_q,dim=c(nrow(log_rr_q),ncol(log_rr_q),1))
     log_rr_prec<-array(log_rr_prec,dim=c(nrow(log_rr_prec),ncol(log_rr_prec),1))
+  #  log_rr_prec_point<-array(log_rr_prec_point,dim=c(nrow(log_rr_prec_point),nrow(log_rr_prec_point),1))
   } else {  
     select.obs<-grep(paste0("^",keep.grp), dimnames(log_rr_q)[[3]])
     exclude.obs2<-which(apply(log_rr_prec,3,function(x)  sum(is.nan(x)))>0)  #Which states have no NaN in covariance matrix
     
     select.obs.state<-setdiff(select.obs,exclude.obs2)      
     log_rr_q <-log_rr_q[index.post,,select.obs.state]
-    #log_rr_sd <-log_rr_sd[,index.post,]
+    #log_rr_prec_point <-log_rr_prec_point[,index.post,]
     log_rr_prec<-log_rr_prec[index.post,index.post,select.obs.state]
+    #log_rr_prec_point<-log_rr_prec_point[1,index.post,select.obs.state]
+    
   }
+  
+  log_rr_prec_point<- matrix(NA, nrow=dim(log_rr_prec)[1],ncol=dim(log_rr_prec)[3] )
+  for(i in 1: ncol(log_rr_prec_point)){
+    log_rr_prec_point[,i]<-diag(log_rr_prec[,,i])
+  }
+  
   N.states[c]<-dim(log_rr_q)[3]
   log.rr.compile[[c]]<-log_rr_q
   log.rr.prec.mat.all[[c]]<-log_rr_prec
-}
+  log.rr.sd.mat.all[[c]]<-log_rr_prec_point
+  
+  }
 
 ##Combine together estimates from each country into a single array
 log_rr_q_all<-array(NA, dim=c(tot_time,max(N.states),N.countries))
 state.labels<-array(NA, dim=dim(log_rr_q_all)[c(2:3)]   )
 log_rr_prec_all<-array(NA, dim=c(tot_time,tot_time,max(N.states),N.countries))
+log_rr_prec_point_all<-array(NA, dim=c(tot_time,max(N.states),N.countries))
+
 ts.length<-rep(NA, times=N.countries)
 for(i in 1:N.countries){
   for(j in 1:N.states[i]){
     log_rr_q_all[1:nrow(log.rr.compile[[i]]),j,i]<-log.rr.compile[[i]][,2,j] #Extract the median
     log_rr_prec_all[1:dim(log.rr.prec.mat.all[[i]])[1],1:dim(log.rr.prec.mat.all[[i]])[1],j,i]<-log.rr.prec.mat.all[[i]][,,j]
+    log_rr_prec_point_all[1:nrow(log.rr.sd.mat.all[[i]]),j,i]<-log.rr.sd.mat.all[[i]][,j] 
+    
   }
   ts.length[i]<-nrow(log.rr.compile[[i]])
   if(N.states[i]>1){

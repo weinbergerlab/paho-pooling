@@ -1,8 +1,9 @@
 
 #Loop trough all of the age categories
 #for(agegrp.select in c('<2m', '2-11m', '2-23m', '2-59m', '12-23m', '24-59m')){
-rm(list=ls(all=TRUE))
-for(agegrp.select in c( '<2m','2-11m', '12-23m', '24-59m','2-59m')){
+for(agegrp.select in c('2-11m', '<2m', '12-23m', '24-59m','2-59m')){
+  rm(list=ls()[-which(ls() %in% c('agegrp.select'))]) 
+  
 print(agegrp.select)
 require(reshape)
 require(reshape2)
@@ -23,7 +24,7 @@ pre.vax.time<-12 #how many to use when anchoring at t=0
 tot_time<-max.time.points+pre.vax.time
 #####################################################################################################################################
 source('PAHO_pooling_source_script.R')
-output_directory<- paste0(dirname(getwd()), "/Results CP/",hdi_level,"_",age_group, "_nat_MVN", max(subnational),'/')
+output_directory<- paste0(dirname(getwd()), "/Results CP/",hdi_level,"_",age_group, "_nat_noMVN", max(subnational),'/')
 output_directory<-gsub("<2", "u2", output_directory)
 ifelse(!dir.exists(output_directory), dir.create(file.path(output_directory)), FALSE)
 
@@ -40,6 +41,8 @@ abline(h=0, v=pre.vax.time)
 nodata.country<-is.na(log_rr_q_all[1,1,])
 log_rr_q_all<-log_rr_q_all[,,!nodata.country, drop=FALSE]
 log_rr_prec_all<-log_rr_prec_all[,,,!nodata.country, drop=FALSE]
+log_rr_prec_point_all<-log_rr_prec_point_all[,,!nodata.country, drop=FALSE]
+
 countries<-countries[!nodata.country]
 saveRDS(countries, file=paste0(output_directory, "country_labs.rds"))
 
@@ -53,15 +56,18 @@ model_string<-"
 model{
 for(i in 1:n.countries){
 for(j in 1:n.states[i]){
+for(v in 1:ts.length[i,j]){       
+
 ##################
 #Observation model
 ##################
-w_hat[1:ts.length[i,j], j,i] ~ dmnorm(w_true[i,j, 1:ts.length[i,j]], log_rr_prec_all[1:ts.length[i,j], 1:ts.length[i,j], j,i])
+w_hat[v, j,i] ~ dnorm(w_true[i,j, v], log_rr_prec_all[ v, j,i])
+
 #################################
 #Model of 'true' time series data
 #################################
-w_true[i,j, 1:ts.length[i,j]] ~ dmnorm(reg_mean[i,j, 1:ts.length[i,j]], w_true_cov_inv[i,j, 1:ts.length[i,j], 1:ts.length[i,j]])
-for(v in 1:ts.length[i,j]){       
+w_true[i,j, v] ~ dnorm(reg_mean[i,j,v], w_true_prec_inv[i,j])
+
 ##################### 
 #CHANGE POINT MODEL #
 #####################
@@ -72,13 +78,10 @@ reg_unbias[i,j,v]<-(step(time.index[v] - cp1[i,j])*(1 - step(time.index[v] - cp2
               +step(time.index[v] - cp2[i,j])*beta[i,j,2]*(cp2[i,j] - cp1[i,j]))
 }
 #slope[i,j]<- -exp(beta[i,j,2]) #Ensures slope is negative
-for(k1 in 1:ts.length[i,j]){
-for(k2 in 1:ts.length[i,j]){
-w_true_cov_inv[i,j,k1,k2]<-ifelse(k1==k2, w_true_var_inv[i,j], 0)
-}
-}
-w_true_var_inv[i,j]<-1/(w_true_sd[i,j]*w_true_sd[i,j])
-w_true_sd[i,j] ~ dunif(0, 1000)
+
+w_true_prec_inv[i,j]<-1/(w_true_sd[i,j]*w_true_sd[i,j])
+w_true_sd[i,j] ~ dunif(0, 100)
+
 cp1[i,j]<-exp(beta[i,j,3])
 cp2.add[i,j]<-exp(beta[i,j,4])
 cp2[i,j]<-cp1[i,j] +cp2.add[i,j]  + 1/max.time.points   #ensure Cp2 is at least 1 unit after CP1
@@ -99,10 +102,10 @@ Omega_inv[1:4, 1:4] ~ dwish(I_Omega[1:4, 1:4], (4 + 1))
 Omega[1:4, 1:4]<-inverse(Omega_inv[1:4, 1:4])
 # Sigma_inv[1:4, 1:4] ~ dwish(I_Sigma[1:4, 1:4], (4 + 1))
 # Sigma[1:4, 1:4]<-inverse(Sigma_inv[1:4, 1:4])
-for(j in c(1,3,4)){
-lambda[j] ~ dnorm(0, 1)
+
+for(j in c(1:4)){
+lambda[j] ~ dnorm(0, 1e-4)
 }
-lambda[2] ~ dnorm(0, 1e-4)
 
 }
 "
@@ -111,12 +114,12 @@ model_jags<-jags.model(textConnection(model_string),
                        data=list('n.countries' = N.countries, 
                                  'n.states' = N.states, 
                                  'w_hat' = log_rr_q_all,
-                                 'log_rr_prec_all' = log_rr_prec_all, 
+                                 'log_rr_prec_all' = log_rr_prec_point_all, 
                                  'ts.length' = ts.length_mat,
                                  'I_Omega'= I_Omega,
                                  'max.time.points'=max.time.points,
                                  'time.index'=time.index,
-                                 'I_Sigma'=I_Sigma), n.chains=2, n.adapt=1000) 
+                                 'I_Sigma'=I_Sigma), n.chains=2, n.adapt=2000) 
 
 #Posterior Sampling
 update(model_jags, n.iter=10000)  
